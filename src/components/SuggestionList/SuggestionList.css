@@ -1,0 +1,15 @@
+.root {
+  list-style: none;
+  padding-left: 0;
+  width: 200px;
+  border: 1px solid #ccc;
+  box-shadow: 1px 1px 3px #ccc;
+  color: #333;
+  font-size: 1em;
+  font-family: monospace;
+}
+
+.root li {
+  padding: 3px;
+  border-bottom: 1px solid #ccc;
+}

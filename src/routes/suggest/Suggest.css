@@ -1,0 +1,10 @@
+.main {
+  font-family: sans-serif;
+}
+
+.editor {
+  width: 600px;
+  height: 325px;
+  font-family: monospace;
+  font-size: 14px;
+}
