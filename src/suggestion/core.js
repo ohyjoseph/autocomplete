@@ -23,32 +23,40 @@ const StartingKeywords = [
 
 //My code
 
-const getAllColumns = (tables) => {
+const getColumnSuggestions = (tables) => {
   const columns = [];
   for (let table in tables) {
     for (let column of tables[table]) {
-      columns.push(new Suggestion(SuggestionType.COLUMN, column.toUpperCase()));
+      columns.push(new Suggestion(SuggestionType.COLUMN, column));
     }
   }
   return columns;
 }
 
-const getTableNames = (tables) => {
+const getTableSuggestions = (tables) => {
   const tableNames = [];
   for (let table in tables) {
-    tableNames.push(new Suggestion(SuggestionType.TABLE, table.toUpperCase()));
+    tableNames.push(new Suggestion(SuggestionType.TABLE, table));
   }
   return tableNames;
 }
 
 const filterSuggestions = (suggestions, query = '') => {
   let filteredSuggestions = suggestions.filter((suggestion) => {
-    return checkWordsMatch(query, suggestion.snippet);
+    return checkWordsMatch(suggestion.snippet, query);
   });
   return filteredSuggestions;
 }
 
-// const filterTables = (query)
+const filterTables = (tables, query) => {
+  let copiedTables = JSON.parse(JSON.stringify(tables));
+  for (let tableName in copiedTables) {
+    if (!checkWordsMatch(tableName, query)) {
+      delete copiedTables[tableName];
+    }
+  }
+  return copiedTables;
+}
 
 const sortByIdentifiers = (identifiers, suggestions) => {
   const indentifierSet = new Set();
@@ -58,7 +66,7 @@ const sortByIdentifiers = (identifiers, suggestions) => {
       identifierSet.add(identifier);
     }
   }
-  
+
   return suggestions.sort((suggestion) => {
     if (identifierSet.has(suggestion.toUpperCase())) {
       return -1;
@@ -67,26 +75,29 @@ const sortByIdentifiers = (identifiers, suggestions) => {
   });
 }
 
-const sortTablesByColumns = (suggestions, tables, columnNames) => {
+const sortTableSuggestionsByColumns = (tableNames, tables, columnNames) => {
+  console.log('HHHHH', tableNames, tables, columnNames)
   let columnSet = new Set();
   for (let columnName of columnNames) {
-    columnSet.add(columnName);
+    columnSet.add(columnName.toUpperCase());
   }
-  for (tableName in tables) {
-    let columns = tables[tableName];
+  tableNames.sort((tableName) => {
+    let columns = tables[tableName.snippet];
     for (let column of columns) {
-      if (columnSet.has(column)) {
-
+      if (columnSet.has(column.toUpperCase())) {
+        return -1;
       }
     }
-  }
+    return 1;
+  });
+  console.log('HEYYYY', tableNames)
 }
 
-const checkWordsMatch = (query, key) => {
+const checkWordsMatch = (key, query) => {
   if (query.length > key.length) return false;
   for (let i = 0; i < query.length; i++) {
-    let char1 = query[i];
-    let char2 = key[i];
+    let char1 = query[i].toUpperCase();
+    let char2 = key[i].toUpperCase();
     if (char1 !== char2) return false;
   }
   return true;
@@ -101,7 +112,7 @@ const getTokensBeforeCursor = (tokens, cursorPosition) => {
 }
 
 const findLatestTokenClause = (tokens) => {
-  for (let i = tokens.length-1; i >= 0; i--) {
+  for (let i = tokens.length - 1; i >= 0; i--) {
     let clauseType = tokens[i].clauseType;
     if (clauseType) return clauseType;
   }
@@ -122,8 +133,8 @@ class Suggester {
     console.log('tables', tables);
     let revelantClause = findLatestTokenClause(relevantTokens);
     if (relevantTokens && relevantTokens.length) {
-      var cursorTokenText = relevantTokens[relevantTokens.length-1].text.toUpperCase();
-      var cursorTokenType = relevantTokens[relevantTokens.length-1].tokenType.toUpperCase();
+      var cursorTokenText = relevantTokens[relevantTokens.length - 1].text.toUpperCase();
+      var cursorTokenType = relevantTokens[relevantTokens.length - 1].tokenType.toUpperCase();
     }
     console.log('relevantTokens', relevantTokens);
     console.log('clause', revelantClause);
@@ -131,23 +142,31 @@ class Suggester {
       suggestions = StartingKeywords;
       suggestions = filterSuggestions(suggestions, cursorTokenText);
     } else if (revelantClause === 'SELECT') {
-      suggestions = getAllColumns(tables);
+      suggestions = getColumnSuggestions(tables);
       console.log(suggestions)
       console.log('latest Text', cursorTokenText)
       if (cursorTokenType === 'IDENTIFIER') {
         suggestions = filterSuggestions(suggestions, cursorTokenText);
         if (from) {
-          sortByIdentifiers(from.columns ,suggestions);
+          sortByIdentifiers(from.columns, suggestions);
         }
       }
     } else if (revelantClause === 'FROM') {
-      suggestions = getTableNames(tables);
       if (cursorTokenType === 'IDENTIFIER') {
-          suggestions = filterSuggestions(suggestions, cursorTokenText);
-          if (select) {
-            // sortByIdentifiers(select.columns ,suggestions);
-            // sortTablesByColumns(suggestions, select.columns);
-          }
+        let filteredTables = filterTables(tables, cursorTokenText);
+        if (select) {
+          suggestions = getTableSuggestions(filteredTables);
+          sortTableSuggestionsByColumns(suggestions, filteredTables, select.columns);
+        } else {
+          suggestions = getTableSuggestions(filteredTables);  
+        }
+      } else {
+        if (select) {
+          suggestions = getTableSuggestions(tables);
+          sortTableSuggestionsByColumns(suggestions, tables, select.columns);
+        } else {
+          suggestions = getTableSuggestions(tables);
+        }
       }
     }
     return suggestions;
