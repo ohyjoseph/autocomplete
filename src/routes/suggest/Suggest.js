@@ -9,8 +9,8 @@ class Suggest extends React.Component {
   constructor(props) {
     super(props);
     this.suggester = new Suggester({
-      table1: ['col1', 'col2', 'col3'],
-      foo_table: ['fc1', 'fc2'],
+      table1: ['col1', 'col2', 'col3', 'shared'],
+      foo_table: ['fc1', 'fc2', 'shared'],
     });
     this.state = { suggestions: this.getSuggestions('', 0) };
   }
