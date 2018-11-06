@@ -25,12 +25,12 @@ class Suggest extends React.Component {
     } else {
       this.setState({ suggestions: [] });
     }
-    console.log(this);
+    console.log('this', this);
   }
 
   getSuggestions(sql, selectionStart) {
     const statement = new Statement(sql);
-    return this.suggester.getSuggestions(statement, selectionStart);
+    return this.suggester.getSuggestions(statement, selectionStart, this.suggester.tables);
   }
 
   render() {

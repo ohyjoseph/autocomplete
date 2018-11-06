@@ -148,6 +148,23 @@ class Statement {
         .map(t => t.text),
     };
   }
+
+  getFromClause() {
+    const after = this.getTokens(0)[2];
+    const selectClauseTokens = after.filter(
+      t => t.clauseType === ClauseType.FROM,
+    );
+
+    if (selectClauseTokens.length === 0) {
+      return undefined;
+    }
+
+    return {
+      columns: selectClauseTokens
+        .filter(t => t.tokenType === TokenType.IDENTIFIER)
+        .map(t => t.text),
+    };
+  }
 }
 
 export { Statement, ClauseType, TokenType, isLiteral };
