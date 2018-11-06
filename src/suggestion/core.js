@@ -21,8 +21,6 @@ const StartingKeywords = [
   new Suggestion(SuggestionType.KEYWORD, 'UPDATE'),
 ];
 
-//My code
-
 const getColumnSuggestions = (tables) => {
   const columns = [];
   for (let table in tables) {
@@ -136,30 +134,28 @@ const findLatestRelevantToken = (tokens) => {
   for (let i = tokens.length - 1; i >= 0; i--) {
     let clauseType = tokens[i].clauseType;
     let tokenType = tokens[i].tokenType;
-    if (clauseType && tokenType !== 'WHITESPACE') return tokens[i];
+    if (tokenType !== 'WHITESPACE') return tokens[i];
   }
   return null;
 }
-
-//end
 
 class Suggester {
   constructor(tables) {
     this.tables = tables;
   }
 
-  getSuggestions(statement, cursorPosition, tables) {
+  getSuggestions(statement, cursorPosition) {
     let suggestions = [];
     let relevantTokens = getTokensBeforeCursor(statement.getTokens()[2], cursorPosition);
     let select = statement.getSelectClause();
     let from = statement.getFromClause();
     console.log('FROM', from)
-    console.log('tables', tables);
+    console.log('tables', this.tables);
     let relevantClause = findCursorTokenClause(relevantTokens);
     let relevantToken = findLatestRelevantToken(relevantTokens)
     if (relevantToken) {
-      var cursorTokenText = relevantToken.text.toUpperCase();
-      var cursorTokenType = relevantToken.tokenType.toUpperCase();
+      var cursorTokenText = relevantToken.text;
+      var cursorTokenType = relevantToken.tokenType;
     }
     console.log('relevantTokens', relevantTokens);
     console.log('clause', relevantClause);
@@ -167,24 +163,24 @@ class Suggester {
       suggestions = StartingKeywords;
       suggestions = filterSuggestions(suggestions, cursorTokenText);
     } else if (relevantClause === 'SELECT') {
-      suggestions = getColumnSuggestions(tables);
+      suggestions = getColumnSuggestions(this.tables);
       console.log(suggestions)
-      console.log('latest Text', cursorTokenText)
+      console.log('relevant Text', cursorTokenText)
       if (cursorTokenType === 'IDENTIFIER') {
         suggestions = filterSuggestions(suggestions, cursorTokenText);
         if (from) {
-          let reversedTables = reverseTablesObject(tables);
+          let reversedTables = reverseTablesObject(this.tables);
           sortColumnSuggestionsByTables(suggestions, reversedTables, from.columns);
         }
       } else {
         if (from) {
-          let reversedTables = reverseTablesObject(tables);
+          let reversedTables = reverseTablesObject(this.tables);
           sortColumnSuggestionsByTables(suggestions, reversedTables, from.columns);
         }
       }
     } else if (relevantClause === 'FROM') {
       if (cursorTokenType === 'IDENTIFIER') {
-        let filteredTables = filterTables(tables, cursorTokenText);
+        let filteredTables = filterTables(this.tables, cursorTokenText);
         if (select) {
           suggestions = getTableSuggestions(filteredTables);
           sortTableSuggestionsByColumns(suggestions, filteredTables, select.columns);
@@ -193,10 +189,10 @@ class Suggester {
         }
       } else {
         if (select) {
-          suggestions = getTableSuggestions(tables);
-          sortTableSuggestionsByColumns(suggestions, tables, select.columns);
+          suggestions = getTableSuggestions(this.tables);
+          sortTableSuggestionsByColumns(suggestions, this.tables, select.columns);
         } else {
-          suggestions = getTableSuggestions(tables);
+          suggestions = getTableSuggestions(this.tables);
         }
       }
     }

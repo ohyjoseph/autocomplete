@@ -30,7 +30,7 @@ class Suggest extends React.Component {
 
   getSuggestions(sql, selectionStart) {
     const statement = new Statement(sql);
-    return this.suggester.getSuggestions(statement, selectionStart, this.suggester.tables);
+    return this.suggester.getSuggestions(statement, selectionStart);
   }
 
   render() {
@@ -44,7 +44,12 @@ class Suggest extends React.Component {
           className={s.editor}
           onChange={e => this.onSQLChange(e)}
         />
-        <SuggestionList suggestions={this.state.suggestions} />
+        <div>
+          {this.state.suggestions.length ?
+            <SuggestionList suggestions={this.state.suggestions} /> :
+            null
+          }
+        </div>
       </div>
     );
   }
